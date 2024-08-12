@@ -11,11 +11,7 @@ function Market.new(balance, resources)
     return self
 end
 
-function Market:canBuy(resource)
-    return self.balance > resource.quantity * resource.price
-end
-
-function Market:buy(resource)
+function Market:find(resource)
     local i = -1
     for k, r in pairs(self.resources) do
         if r.id == resource.id then
@@ -23,6 +19,15 @@ function Market:buy(resource)
             break
         end
     end
+    return i
+end
+
+function Market:canBuy(resource)
+    return self.balance > resource.quantity * resource.price
+end
+
+function Market:buy(resource)
+    local i = self:find(resource)
     -- not found, insert
     if i == -1 then
         table.insert(self.resources, { id = resource.id, price = resource.price, quantity = 0 })
@@ -39,14 +44,7 @@ function Market:buy(resource)
 end
 
 function Market:canSell(resource)
-    local i = -1
-    for k, r in pairs(self.resources) do
-        if r.id == resource.id then
-            i = k
-            break
-        end
-    end
-
+    local i = self:find(resource)
     return (i ~= -1 and self.resources[i].quantity >= resource.quantity), i
 end
 
