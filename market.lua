@@ -11,6 +11,10 @@ function Market.new(balance, resources)
     return self
 end
 
+function Market:canBuy(resource)
+    return self.balance > resource.quantity * resource.price
+end
+
 function Market:buy(resource)
     local i = -1
     for k, r in pairs(self.resources) do
@@ -24,18 +28,17 @@ function Market:buy(resource)
         table.insert(self.resources, { id = resource.id, price = resource.price, quantity = 0 })
         i = #self.resources
     end
-    local newBalance = self.balance - resource.quantity * resource.price
-    if newBalance < 0 then
+    if not self:canBuy(resource) then
         return false
     else
         self.resources[i].quantity = self.resources[i].quantity + resource.quantity
         self.resources[i].price = resource.price
-        self.balance = newBalance
+        self.balance = self.balance - resource.quantity * resource.price
         return true
     end
 end
 
-function Market:sell(resource)
+function Market:canSell(resource)
     local i = -1
     for k, r in pairs(self.resources) do
         if r.id == resource.id then
@@ -44,17 +47,21 @@ function Market:sell(resource)
         end
     end
 
-    -- resource not found
-    if i == -1 then
+    return (i ~= -1 and self.resources[i].quantity >= resource.quantity), i
+end
+
+function Market:sell(resource)
+    local can, i = self:canSell(resource)
+    if not can then
         return false
     end
     local newQty = self.resources[i].quantity - resource.quantity
-    if newQty < 0 then
-        return false
-    end
     self.resources[i].quantity = newQty
     if newQty == 0 then
         table.remove(self.resources, i)
+    else
+        -- do we keep last buy price or sell can change this too?
+        self.resources[i].price = resource.price
     end
     self.balance = self.balance + resource.quantity * resource.price
     return true
